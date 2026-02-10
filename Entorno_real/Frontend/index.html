@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Control de Almácigos IoT</title>
     <link rel="stylesheet" href="estilos.css">
-    <!-- Fuente Inter (Google Fonts) -->
+    <!-- Fuente Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 
@@ -15,13 +15,13 @@
     <div class="dashboard-container">
 
         <header>
-            <h1>🌱 Monitoreo del Almácigo</h1>
+            <h1>🌱 Sistema de Monitoreo de Almácigos</h1>
             <div id="connection-status" style="color: var(--success-color); font-size: 0.9rem;">● En línea</div>
         </header>
 
-        <!-- Grid de Métricas (Tarjetas) -->
+        <!-- Grilla de Métricas (valores de los sensores) -->
         <section class="metrics-grid">
-            <!-- Temperatura -->
+            <!-- Sensor de Temperatura -->
             <div class="card">
                 <div class="icon">🌡️</div>
                 <h3>Temperatura</h3>
@@ -29,21 +29,21 @@
                         style="font-size: 1rem; color: var(--text-secondary);">°C</span></div>
             </div>
 
-            <!-- Luz -->
+            <!-- Sensor de Luz -->
             <div class="card">
                 <div class="icon">☀️</div>
                 <h3>Nivel de Luz</h3>
                 <div class="value"><span id="luz">--</span></div>
             </div>
 
-            <!-- Nivel -->
+            <!-- Sensor de Nivel -->
             <div class="card">
                 <div class="icon">💧</div>
                 <h3>Nivel de Líquido</h3>
                 <div class="value"><span id="nivel">--</span></div>
             </div>
 
-            <!-- Estado Sistema -->
+            <!-- Estado del Sistema -->
             <div class="card">
                 <div class="icon">🖥️</div>
                 <h3>Estado Sistema</h3>
@@ -66,7 +66,7 @@
         <!-- Historial -->
         <section class="table-container">
             <div class="table-header">
-                <h3>Historial (Últimas 500 muestras)</h3>
+                <h3>Historial de muestras (últimas 500)</h3>
             </div>
             <div class="table-wrapper">
                 <table>
@@ -81,7 +81,7 @@
                         </tr>
                     </thead>
                     <tbody id="tabla">
-                        <!-- Las filas se generan con JS -->
+                        <!-- Los registros se generan en el JS -->
                     </tbody>
                 </table>
             </div>
@@ -90,6 +90,8 @@
     </div>
 
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- descargamos e importamos la librería MQTT.js de internet, esto para que el navegador entienda el protocolo MQTT y pueda conectarse al broker a traves de WebSockets -->
+
     <script src="Logica.js"></script>
 </body>
 
