@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <DHT.h>
+#include "secrets.h" // Importamos las variables de entorno (usamos .h pq el ide de Arduino no maneja .env)
 
 #define DHTPIN 4
 #define DHTTYPE DHT11
@@ -12,10 +13,11 @@
 #define LED_ROJO 27
 #define BUZZER 25
 
-const char* ssid = "WIFI_de_la_red"; // Cambiar al Wi-Fi de la red
-const char* password = "Password_de_la_red"; // Cambiar al Password de la red
+// Obtenemos los valores del archivo "secrets.h" para proteger las credenciales
+const char* ssid = WIFI_SSID; 
+const char* password = WIFI_PASSWORD; 
 
-const char* mqtt_server = "192.168.0.24"; // IP de mi pc (q tiene corriendo al broker mqtt). Cambiar al IP del broker MQTT
+const char* mqtt_server = MQTT_SERVER_IP; 
 const int mqtt_port = 1883; // Puerto de la ESP32 en MQTT
 
 //variables globales para manejo del buzzer pasivo
