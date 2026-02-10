@@ -19,3 +19,5 @@ services:
     depends_on:
       - broker
     restart: unless-stopped
+
+# Mapeamos el puerto 80 del contenedor al 8080 de la PC para acceder al frontend desde el navegador (ya q el navegador de nuestra PC no forma parte de la red de contenedores)
