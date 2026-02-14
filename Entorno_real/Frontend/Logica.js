@@ -46,6 +46,7 @@ client.on('offline', () => {
 });
 
 client.on('message', (topic, message) => {
+    console.log(`Mensaje recibido en ${topic}:`, message.toString());
     try {
         const data = JSON.parse(message.toString());
 

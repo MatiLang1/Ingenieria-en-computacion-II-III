@@ -1,7 +1,7 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <DHT.h>
-#include "secrets.h" // Importamos las variables de entorno (usamos .h pq el ide de Arduino no maneja .env)
+#include "secrets.h" 
 
 #define DHTPIN 4
 #define DHTTYPE DHT11
@@ -13,32 +13,35 @@
 #define LED_ROJO 27
 #define BUZZER 25
 
-// Obtenemos los valores del archivo "secrets.h" para proteger las credenciales
 const char* ssid = WIFI_SSID; 
 const char* password = WIFI_PASSWORD; 
 
 const char* mqtt_server = MQTT_SERVER_IP; 
-const int mqtt_port = 1883; // Puerto de la ESP32 en MQTT
+const int mqtt_port = 1883; 
 
-//variables globales para manejo del buzzer pasivo
+// Configuración PWM para Buzzer Pasivo (Compatible ESP32 Core v3.0)
+const int pwmFreq = 2000;
+const int pwmResolution = 8;
+const int pwmDuty = 128; // 50% duty cycle
+
+// Buzzer vars
 unsigned long tiempoInicioBuzzer = 0;
 bool buzzerState = false;
-const unsigned long DURACION_BUZZER = 15000; //15 segundos
+const unsigned long DURACION_BUZZER = 15000; 
 
-//variables globales para manejo del parpadeo del LED rojo en el loop
+// LED vars
 unsigned long ultimo_parpadeo = 0;
 bool ledState = LOW;
-const unsigned long intervalo_parapadeo = 500; // 500 ms parpadeo
+const unsigned long intervalo_parapadeo = 500; 
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 DHT dht(DHTPIN, DHTTYPE);
 
-
 String estadoSistema = "NORMAL";
 
 unsigned long ultima_publicacion = 0;
-const unsigned long intervalo_publicacion = 60000; // 1 minuto
+const unsigned long intervalo_publicacion = 5000; 
 
 void setupWiFi() {
   WiFi.begin(ssid, password);
@@ -49,30 +52,35 @@ void callback(char* topic, byte* payload, unsigned int length) {
   String msg;
   for (int i = 0; i < length; i++) msg += (char)payload[i];
 
-if (String(topic) == "semillero/control/buzzer" && msg.indexOf("OFF") != -1) {
-    noTone(BUZZER);
-    buzzerState = false; //cancelamos el temporizador
+  if (String(topic) == "semillero/control/buzzer" && msg.indexOf("OFF") != -1) {
+    ledcWrite(BUZZER, 0); // Apagar PWM (Core v3 usa Pin)
+    buzzerState = false; 
     client.publish("semillero/estado/buzzer", "{ \"buzzer\": \"OFF (Manual)\" }");
-}
+  }
 }
 
 void reconnectMQTT() {
   while (!client.connected()) {
+    Serial.print("Intentando conectar a MQTT IP: ");
+    Serial.println(mqtt_server);
     if (client.connect("ESP32_Semillero")) {
+      Serial.println("Conectado a broker MQTT");
       client.subscribe("semillero/control/buzzer");
     } else {
+      Serial.print("Falló MQTT, rc=");
+      Serial.print(client.state());
+      Serial.println(" reintentando en 2s");
       delay(2000);
     }
   }
 }
 
-// Definimos los valores umbrales para los sensores (POSIBLEMENTE HAY QUE ADAPTARLOS A LA ESP32, ESTOS SON LOS VALORES DE ARDUINO, CONSIDERA 700/1024 = 68% POR LO QUE EN ESP32 QUE USA 4096 SERIA 2848 SU 68%, REVISAR SI HAY QUE ESCALAR ESTOS VALORES SOLO DE LUZ Y DE NIVEL EL DE TEMPERATURA NO SE MODIFICA)
-#define TEMP_AVISO 28 // Grados °C
+#define TEMP_AVISO 28 
 #define TEMP_ALERTA 35
-#define LUZ_AVISO 700
-#define LUZ_ALERTA 900
-#define NIVEL_AVISO 300
-#define NIVEL_ALERTA 100
+#define LUZ_AVISO 2000
+#define LUZ_ALERTA 2900
+#define NIVEL_AVISO 900
+#define NIVEL_ALERTA 400
 
 void evaluarEstado(float temp, int luz, int nivel) {
   bool alerta = (temp > TEMP_ALERTA) || (luz > LUZ_ALERTA) || (nivel < NIVEL_ALERTA);
@@ -80,11 +88,19 @@ void evaluarEstado(float temp, int luz, int nivel) {
 
   if (alerta) {
     estadoSistema = "ALERTA";
-    // Si entra en alerta (aunque sea un segundo), activamos el buzzer
-    buzzerState = true;
-    tiempoInicioBuzzer = millis(); // siempre actualiza el tiempo inicial (si pasaron 5 s quedan 10 s de buzzer, lo recarga a 15 s)
-    tone(BUZZER, 1000); // activamos el tono del buzzer
-    Serial.println("ALERTA detectada!");
+    
+    // Forzamos PWM ON SIEMPRE que haya alerta (por si acaso se apago)
+    ledcWrite(BUZZER, pwmDuty); 
+
+    // Solo logueamos/publicamos si el estado cambió a TRUE
+    if (!buzzerState) {
+        buzzerState = true;
+        Serial.println("ALERTA detectada! Buzzer ON (PWM)");
+        // Forzamos el envio inmediato
+        client.publish("semillero/estado/buzzer", "{ \"buzzer\": \"ON\" }");
+    }
+    
+    tiempoInicioBuzzer = millis(); // Reinicia temporizador
   } 
   else if (aviso) {
      estadoSistema = "AVISO";
@@ -97,49 +113,82 @@ void evaluarEstado(float temp, int luz, int nivel) {
 }
 
 void publishAll(float temp, int luz, int nivel) {
-  char buf[80]; //declaramos un buffer (un espacio de memoria temporal de type char un string con capacidad para 80 caracteres). Es un array de caracteres donde almacenamos el string completo que enviaremos por mqtt
+  char buf[80];
 
-  //sprintf nos permite formatear un string (como el printf pero en lugar de imprimir en consola, lo GUARDA en una variable, en este caso en buf). Asi formateamos el string completo que vamos a mandar por mqtt. Las / invertidas es para que el lenguaje entienda que las comillas de value son partes del string, el %.2f es reemplazado por el valor de la variable que le pasas (en este caso temp) el 2 indica 2 decimales la f es floar, en luz y nivel le pasas la d porque es int y en estado sistema le pasas la s pq es un string
   sprintf(buf, "{ \"value\": %.2f }", temp);
-  client.publish("semillero/sensores/temperatura", buf);
+  if (client.publish("semillero/sensores/temperatura", buf, true)) {
+    Serial.println("Publicado temperatura: OK");
+  } else {
+    Serial.println("Publicado temperatura: FALLO");
+  }
 
-
-  //El método .publish() de la librería PubSubClient recibe dos parámetros: El topic (string). y el payload que tiene el contenido que se envia, dicho payload debe ser un array de caracteres
   sprintf(buf, "{ \"value\": %d }", luz);
-  client.publish("semillero/sensores/luz", buf);
+  if (client.publish("semillero/sensores/luz", buf, true)) {
+    Serial.println("Publicado luz: OK");
+  } else {
+    Serial.println("Publicado luz: FALLO");
+  }
 
-  //sprintf sobreescribe buf cada vez que se usa para los distintos topics
   sprintf(buf, "{ \"value\": %d }", nivel);
-  client.publish("semillero/sensores/nivel", buf);
+   if (client.publish("semillero/sensores/nivel", buf, true)) {
+    Serial.println("Publicado nivel: OK");
+  } else {
+    Serial.println("Publicado nivel: FALLO");
+  }
 
   sprintf(buf, "{ \"estado\": \"%s\" }", estadoSistema.c_str());
-  client.publish("semillero/estado/sistema", buf);
+  client.publish("semillero/estado/sistema", buf, true);
 
+  // Tambien publicamos aqui para asegurar redundancia
   client.publish("semillero/estado/buzzer",
-    buzzerState ? "{ \"buzzer\": \"ON\" }" : "{ \"buzzer\": \"OFF\" }");
+    buzzerState ? "{ \"buzzer\": \"ON\" }" : "{ \"buzzer\": \"OFF\" }", true);
 }
 
 void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("ESP32 iniciando...");
+
   pinMode(LED_VERDE, OUTPUT);
   pinMode(LED_ROJO, OUTPUT);
+  
+  // Agregar pinMode por seguridad
   pinMode(BUZZER, OUTPUT);
 
+  // Configuración PWM (Core v3.0+)
+  // ledcAttach(pin, freq, resolution);
+  if (!ledcAttach(BUZZER, pwmFreq, pwmResolution)) {
+      Serial.println("Error al adjuntar LEDC!");
+  }
+
   dht.begin();
+
+  Serial.println("Conectando a WiFi...");
   setupWiFi();
+  Serial.println("WiFi conectado");
+  Serial.print("IP ESP32: ");
+  Serial.println(WiFi.localIP());
 
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
+
+  // Test Sonido Inicio
+  ledcWrite(BUZZER, pwmDuty);
+  delay(200);
+  ledcWrite(BUZZER, 0);
+
+  Serial.println("Setup finalizado");
 }
 
 void loop() {
   if (!client.connected()) reconnectMQTT();
   client.loop();
 
-  //logica de apagado del buzzer
+  // Logica de apagado del buzzer (timer)
   if (buzzerState) {
     // Si ya pasaron 15s desde la ÚLTIMA recarga
     if (millis() - tiempoInicioBuzzer >= DURACION_BUZZER) {
-      noTone(BUZZER);
+      ledcWrite(BUZZER, 0); // Apagar PWM (Core v3 usa Pin)
       buzzerState = false;
       client.publish("semillero/estado/buzzer", "{ \"buzzer\": \"OFF\" }");
       Serial.println("Buzzer apagado por Tiempo");
@@ -147,14 +196,12 @@ void loop() {
   }
 
   // Logica de los LEDs
-  digitalWrite(LED_VERDE, HIGH); // Led Verde siempre encendido
+  digitalWrite(LED_VERDE, HIGH); 
 
-  // Led Rojo depende del estado del sistema
   if (estadoSistema == "ALERTA") {
-    digitalWrite(LED_ROJO, HIGH); // Rojo prendido fijo
+    digitalWrite(LED_ROJO, HIGH); 
   } 
   else if (estadoSistema == "AVISO") {
-    // Rojo parpadeando cada 500ms
     if (millis() - ultimo_parpadeo >= intervalo_parapadeo) {
       ultimo_parpadeo = millis();
       ledState = !ledState;
@@ -162,18 +209,16 @@ void loop() {
     }
   } 
   else {
-    // OK
-    digitalWrite(LED_ROJO, LOW); // Rojo apagado
+    digitalWrite(LED_ROJO, LOW); 
   }
 
-  //Publicacion periodica cada 1 minuto (60000 ms)
   if (millis() - ultima_publicacion >= intervalo_publicacion) {
     ultima_publicacion = millis();
     float temp = dht.readTemperature();
     int luz = analogRead(LDR_PIN);
     int nivel = analogRead(NIVEL_PIN);
 
-    evaluarEstado(temp, luz, nivel);
+    evaluarEstado(temp, luz, nivel); 
     publishAll(temp, luz, nivel);
   }
 }

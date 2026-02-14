@@ -5,7 +5,7 @@ services:
     image: eclipse-mosquitto:2
     container_name: mosquitto_real
     ports:
-      - "1883:1883"
+      - "0.0.0.0:1883:1883"
       - "9001:9001"
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
