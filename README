@@ -15,9 +15,9 @@ Al levantar el contenedor de Docker se levanta lo siguiente:
 
 - Pasos de ejecución:
 
-1. Clonar el repositorio (usar Git Bash o cualquier terminal de comandos): git clone https://github.com/MatiLang1/Ingenieria-en-computacion-II.git
+1. Clonar el repositorio (usar Git Bash o cualquier terminal de comandos): git clone https://github.com/MatiLang1/Ingenieria-en-computacion-II-III.git
 
-2. Ingresar al entorno de pruebas: cd Ingenieria-en-computacion-II/Entorno_pruebas
+2. Ingresar al entorno de pruebas: cd Ingenieria-en-computacion-II-III/Entorno_pruebas
 
 3. Ejecutar el sistema: docker compose up --build
 
