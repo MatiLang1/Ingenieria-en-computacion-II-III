@@ -1,4 +1,4 @@
-const client = mqtt.connect('ws://192.168.0.24:9001'); //(asegurarse de que la IP coincida con la de la PC)
+const client = mqtt.connect('ws://192.168.0.111:9001'); //(asegurarse de que la IP coincida con la de la PC)
 
 // Inicializamos registros desde LocalStorage si existen
 let savedData = localStorage.getItem('historial_semillero');

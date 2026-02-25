@@ -115,21 +115,33 @@ void evaluarEstado(float temp, int luz, int nivel) {
 void publishAll(float temp, int luz, int nivel) {
   char buf[80];
 
-  sprintf(buf, "{ \"value\": %.2f }", temp);
+  if (isnan(temp)) {
+    sprintf(buf, "{ \"value\": \"-\" }");
+  } else {
+    sprintf(buf, "{ \"value\": %.2f }", temp);
+  }
   if (client.publish("semillero/sensores/temperatura", buf, true)) {
     Serial.println("Publicado temperatura: OK");
   } else {
     Serial.println("Publicado temperatura: FALLO");
   }
 
-  sprintf(buf, "{ \"value\": %d }", luz);
+  if (luz == -1) {
+    sprintf(buf, "{ \"value\": \"-\" }");
+  } else {
+    sprintf(buf, "{ \"value\": %d }", luz);
+  }
   if (client.publish("semillero/sensores/luz", buf, true)) {
     Serial.println("Publicado luz: OK");
   } else {
     Serial.println("Publicado luz: FALLO");
   }
 
-  sprintf(buf, "{ \"value\": %d }", nivel);
+  if (nivel == -1) {
+    sprintf(buf, "{ \"value\": \"-\" }");
+  } else {
+    sprintf(buf, "{ \"value\": %d }", nivel);
+  }
    if (client.publish("semillero/sensores/nivel", buf, true)) {
     Serial.println("Publicado nivel: OK");
   } else {
@@ -215,8 +227,15 @@ void loop() {
   if (millis() - ultima_publicacion >= intervalo_publicacion) {
     ultima_publicacion = millis();
     float temp = dht.readTemperature();
-    int luz = analogRead(LDR_PIN);
-    int nivel = analogRead(NIVEL_PIN);
+    // Determinamos si los analógicos están "desconectados". 
+    // Cuando un pin analógico está al aire sin pullup/pulldown, varía o lee 0. 
+    // Usualmente si es un divisor de tensión (LDR) o un sensor de nivel simple, leerá 0 o cerca de 0 al desconectarse. 
+    // Sin embargo, podemos considerar que 0 absoluto durante un tiempo o menor a 5 es desconexión.
+    int rawLuz = analogRead(LDR_PIN);
+    int rawNivel = analogRead(NIVEL_PIN);
+
+    int luz = (rawLuz < 5) ? -1 : rawLuz;
+    int nivel = (rawNivel < 5) ? -1 : rawNivel;
 
     evaluarEstado(temp, luz, nivel); 
     publishAll(temp, luz, nivel);
