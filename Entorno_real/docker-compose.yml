@@ -9,7 +9,10 @@ services:
       - "9001:9001"
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    #aca establecemos que el archivo mosquitto.conf q esta en la raiz de Entorno_real sobrescriba al archivo mosquitto.conf del contenedor q esta en la ruta mosquitto/config/mosquitto.conf (el broker al inciar busca en esa ruta dicho archivo para iniciar con la configuracion indicada en él)
+
     restart: unless-stopped
+    #con esta instruccion le decimos al contenedor que si falla o se detiene, se vuelva a iniciar automaticamente
 
   frontend:
     build: ./Frontend
