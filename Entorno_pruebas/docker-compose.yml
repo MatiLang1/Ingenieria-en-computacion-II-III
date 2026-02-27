@@ -18,6 +18,8 @@ services:
     container_name: publisher-mock
     depends_on:
       - mqtt-broker #depende de este contenedor (solo se levantara si el broker esta funcionando, es decir si ese contenedor esta levantado)
+    environment:
+      - TZ=America/Argentina/Buenos_Aires # establecemos la zona horaria del contenedor para que los timestamps sean correctos
     volumes:
       - ./publisher_mock:/app
     restart: unless-stopped
@@ -27,6 +29,8 @@ services:
     container_name: subscriber
     depends_on:
       - mqtt-broker #depende de este contenedor
+    environment:
+      - TZ=America/Argentina/Buenos_Aires # establecemos la zona horaria del contenedor para que los timestamps sean correctos
     volumes:
       - ./subscriber:/app
     restart: unless-stopped
