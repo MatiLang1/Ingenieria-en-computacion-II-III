@@ -14,7 +14,7 @@ services:
     restart: unless-stopped #si el contenedor falla, Docker lo reinicia (a menos que se detenga manualmente)
 
   publisher-mock:
-    build: ./publisher_mock #ruta donde esta el Dockerfile del publisher_mock para construir la imagen
+    build: ./publisher_mock #ruta donde esta el Dockerfile del publisher_mock para construir el container
     container_name: publisher-mock
     depends_on:
       - mqtt-broker #depende de este contenedor (solo se levantara si el broker esta funcionando, es decir si ese contenedor esta levantado)
@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
 
   subscriber:
-    build: ./subscriber #ruta para buscar el Dockerfile del subscriber para construir la imagen
+    build: ./subscriber #ruta para buscar el Dockerfile del subscriber para construir el container
     container_name: subscriber
     depends_on:
       - mqtt-broker #depende de este contenedor
@@ -32,12 +32,12 @@ services:
     restart: unless-stopped
 
   tests:
-    build: ./tests #ruta para buscar el Dockerfile del test para construir la imagen
+    build: ./tests #ruta para buscar el Dockerfile del test para construir el container
     container_name: integration-tests
     depends_on:
       #el contenedor de tests depende de estos 2 (solo se levanta si los otros 2 estan levantados)
       - mqtt-broker #depende de este contenedor
       - publisher-mock #depende de este contenedor
     volumes:
-      - ./tests:/app #ruta donde se guarda el volumen
+      - ./tests:/app # guardamos el volumen (/app es la ruta dentro del contenedor en donde se va a copiar el contenido de la carpeta tests (cuya ruta es ./tests en la PC). Tomamos lo de tests y lo copiamos en la ruta app del container. El volumen sirve para q los cambios en la PC/IDE se vean reflejados sin reconstruir la imagen
     restart: unless-stopped
