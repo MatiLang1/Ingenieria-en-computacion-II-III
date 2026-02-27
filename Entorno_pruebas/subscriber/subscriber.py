@@ -11,11 +11,12 @@ PORT = 1883
 MAX_REGISTROS = 500
 JSON_FILE = "registros_mqtt.json"
 
-# Usamos deque para mantener los 500 en memoria, pero también persistiremos en disco
+# Usamos deque para tener una lista de 500 registros y q se borre el mas antiguo al agregar uno nuevo
 registros = deque(maxlen=MAX_REGISTROS)
 
+# FUNCION PARA GUARDAR EN DISCO (SOBREESCRIBE LA COLA DE REGISTROS ACTUAL EN EL JSON)
 def guardar_en_disco():
-    """Guarda la cola de registros actual en un archivo JSON."""
+    #Guardamos la cola de registros actual en un archivo JSON
     try:
         with open(JSON_FILE, "w") as f:
             # Convertimos la deque a lista para que sea serializable
@@ -23,47 +24,58 @@ def guardar_en_disco():
     except Exception as e:
         print(f"Error al guardar JSON: {e}")
 
+
+# FUNCION QUE SE EJECUTA CUANDO LLEGA UN MENSAJE (la llama la libreria cuando ocurre el evento de recepcion de msj). Los parametro client y userdata son pasados por la libreria obligatoriamente aunque no los usemos
 def on_message(client, userdata, msg):
-    #estructuramos el registro con tiempo
+    #estructuramos el registro con tiempo (decodificamos el payload de bytes a texto plano)
     nuevo_dato = {
         "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "topic": msg.topic,
-        "valor": msg.payload.decode()
+        "valor": msg.payload.decode() # Ej: "25.5" (texto plano)
     }
     
+    # agregamos el nuevo registro a la cola/lista
     registros.append(nuevo_dato)
     
     #actualizamos el JSON cada vez que llega un mensaje
     guardar_en_disco()
     
-    print(f"Recibido y guardado: {nuevo_dato['topic']} -> {nuevo_dato['valor']}")
+    print(f"Recibido y guardado: {nuevo_dato['topic']} - {nuevo_dato['valor']}")
 
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-client.on_message = on_message
+client.on_message = on_message #guardamos en el atributo "on_message" de nuestro objeto "client" (de la libreria MQTT) nuestra funcion "on_message". Al hacerlo sin () no ejecutamos la funcion sino q la asignamos
 
-#cargar registros previos si el archivo ya existe (para no perder datos al reiniciar)
-if os.path.exists(JSON_FILE):
+#cargar registros previos del JSON si existen (para no perder datos al reiniciar)
+if os.path.exists(JSON_FILE): #si existe el archivo JSON en tu SO (en el contenedor en este caso, el cual existe pq hicimos un volumen donde lo copiamos)
     try:
-        with open(JSON_FILE, "r") as f:
-            datos_previos = json.load(f)
-            registros.extend(datos_previos)
-            print(f"Se cargaron {len(datos_previos)} registros previos del disco.")
-    except:
+        with open(JSON_FILE, "r") as f: #abrimos el archivo JSON en modo lectura
+            datos_previos = json.load(f) #cargamos los datos previos del JSON
+            registros.extend(datos_previos) #agregamos los datos previos a la cola/lista
+            print(f"Se cargaron {len(datos_previos)} registros previos desde el JSON")
+    except: # atrapamos cualquier error y lo ignoramos para q siga la ejecucion
         pass
 
-#manejamos la conexion del suscriptor con el broker
+# REALIZAMOS LA CONEXION CON EL BROKER
 while True:
     try:
-        client.connect(BROKER, PORT, 60)
-        break
-    except ConnectionRefusedError:
+        client.connect(BROKER, PORT, 60) #intentamos conectar con el broker (60s de keep alive, si no recibimos nada del broker en 60s, asumimos que se desconecto)
+        break #si se conecta, salimos del bucle
+    except ConnectionRefusedError: #si no se conecta, nos quedamos en el bucle y reintentamos cada 2s
         print("Broker no listo, reintentando en 2s")
         time.sleep(2)
 
 client.subscribe("semillero/#")
-print("Suscriptor conectado y esperando mensajes...")
+# MEJOR ARQUITECTURA (suscribirse a cada topic por separado cumpliendo la arquitectura de la API), en este caso como es un entorno de test usamos el comodin # por comodidad y en caso de q agreguemos mas topicos a nuestra API no hay q modificar el codigo del suscriptor
+# client.subscribe("semillero/sensores/temperatura")
+# client.subscribe("semillero/sensores/luz")
+# client.subscribe("semillero/sensores/nivel")
+# client.subscribe("semillero/estado/sistema")
+# client.subscribe("semillero/estado/buzzer")
+
+print("Suscriptor conectado y esperando mensajes")
 client.loop_forever()
+
 
 
 #Codigo anterior (suscriptor MQTT, sin generar JSON)

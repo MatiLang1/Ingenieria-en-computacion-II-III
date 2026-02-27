@@ -24,8 +24,10 @@ NIVEL_ALERTA = 100
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 while True:
     try:
+        # el 60 es el keep alive del publicador (si no manda nada por 60 segundos se desconecta del broker)
         client.connect(BROKER, PORT, 60)
         break
+    # si se atrapa el error "ConnectionRefusedError" puntualmente, se ejecuta logica de reconexion
     except ConnectionRefusedError:
         print("Broker no listo, reintentando en 2s")
         time.sleep(2)
@@ -61,16 +63,22 @@ while True:
 
     #este payload lo podria convertir a JSON con json.dumps(payload) y enviar dicho objeto en un solo topic. Implica pasar el diccionario a formato json y ese json pasa a formato bytes cuando usamos el metodo publish (ya q MQTT solo maneja bytes)
 
-    #el suscriptor siempre recibe bytes en msg.payload, hay que volverlo a convertir a JSON (o a texto plano segun lo q enviamos) eso lo hacemos con el metodo .decode() y luego (si enviamos JSON) hay que parsearlo con json.loads para volver a tenerlo en un diccionario
-
-    #decode() simplemente recupera el String original tal cual lo enviaste
-    
-    #envio cada valor por separado en formato texto plano en sus topics correspondientes
+    #el suscriptor siempre recibe bytes en msg.payload ya MQTT envia y recibe bytes, hay que convertirlo a texto plano segun lo q enviamos y eso lo hacemos con el metodo .decode(). Luego (si ese texto plano es un JSON) hay que parsearlo con json.loads para convertirlo en un diccionario de python
+ 
+    #ENVIO DE CADA VALOR POR SEPARADO EN FORMATO TEXTO PLANO
+    # Ej de envio: (my/topic/ valor) -- semillero/sensores/temperatura 25.5
     client.publish(TOPICS["temp"], payload["temperatura"])
     client.publish(TOPICS["luz"], payload["luz"])
     client.publish(TOPICS["nivel"], payload["nivel"])
     client.publish(TOPICS["estado_sistema"], payload["estado_sistema"])
     client.publish(TOPICS["buzzer"], payload["buzzer"])
 
-    print("Publicado:", payload)
-    time.sleep(60)
+    # print("Publicado:", payload) #imprimimos el diccionario payload
+
+    # LOGS (imprimimos topico + valor de cada uno)
+    print(TOPICS["temp"] + " " + str(payload["temperatura"]))
+    print(TOPICS["luz"] + " " + str(payload["luz"]))
+    print(TOPICS["nivel"] + " " + str(payload["nivel"]))
+    print(TOPICS["estado_sistema"] + " " + str(payload["estado_sistema"]))
+    print(TOPICS["buzzer"] + " " + str(payload["buzzer"]))
+    time.sleep(60) # publicamos cada 60 segundos
