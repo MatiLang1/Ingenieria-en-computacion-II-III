@@ -22,5 +22,5 @@ Se incluye el publisher_mock que simula ser la ESP32 para desacoplar el hardware
 
 
 Nota (extra):
-Al cambiar a la rama x ingresamos al entorno de pruebas dockerizado:
+Al cambiar a la rama logica-desconex-sensores ingresamos al entorno de pruebas dockerizado:
     Este proyecto incluye un entorno de pruebas dockerizado que permite evaluar el funcionamiento del sistema sin necesidad de contar con el dispositivo ni sensores físicos, en el hay un broker mqtt, un publicador, un suscriptor y un test de integracion cada uno como un servicio. La idea del mismo es validar el flujo completo del sistema sin el uso de hardware
