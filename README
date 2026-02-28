@@ -1,25 +1,25 @@
-- Ejecución del entorno de pruebas:
+IMPORTANTE: si falla la comunicacion de la ESP32 revisar PUERTOS (como sugerencia se recomienda cambiar el puerto 1883 del docker compose por el puerto 1882 quedando asi 1882:1883 y utilizar el 1882 en las config de la ESP32)
 
-Este proyecto incluye un entorno de pruebas dockerizado que
-permite evaluar el funcionamiento del sistema sin necesidad de contar con
-el dispositivo ni sensores físicos
+Pasos de ejecución:
+- Clonar el repositorio: git clone https://github.com/MatiLang1/Ingenieria-en-computacion-II-III.git
+- Situarse en la rama main (por defecto es main)
+- Construir el docker compose (docker compose up --build) y levantar los servicios
+- Acceder a la pagina web (http://localhost:8080)
 
-Al levantar el contenedor de Docker se levanta lo siguiente:
-    Un broker MQTT (Mosquitto)
-    Un Mock que simula la publicacion MQTT de los datos que enviaria el ESP32
-    Un suscriptor MQTT que recibe los datos enviados por el Mock
-    Un test de integración que valida todo el sistema
+El compose crea 3 contenedores que estan conectados:
+    - Frontend (la pagina Web - Suscriptor MQTT)
+    - Backend (Publisher_Mock que simula a la ESP32 - Publicador MQTT)
+    - Broker MQTT (Mosquitto)
 
-- Requisitos:
-    Debe tener instalado Docker
+El proyecto presenta dos publicadores MQTT, un broker y un suscriptor MQTT:
+    - ESP32 (Publisher MQTT)
+    - Publisher_Mock (Publisher MQTT)
+    - Mosquitto (Broker MQTT)
+    - Frontend - Página Web (Suscriptor MQTT)
 
-- Pasos de ejecución:
+Se incluye el publisher_mock que simula ser la ESP32 para desacoplar el hardware, de forma tal que validemos el funcionamiento del sistema sin el uso del hardware. Su comportamiento replica a la totalidad a la ESP32 tanto en la publicacion como en la suscripcion (se puede observar en pag web y logs del container del publisher_mock)
 
-1. Clonar el repositorio (usar Git Bash o cualquier terminal de comandos): git clone https://github.com/MatiLang1/Ingenieria-en-computacion-II-III.git
 
-2. Ingresar al entorno de pruebas: cd Ingenieria-en-computacion-II-III/Entorno_pruebas
-
-3. Ejecutar el sistema: docker compose up --build
-
-4. Visualizar los valores publicados, recibidos y testeados (ejecutar en terminal): docker compose logs -f 
-
+Nota (extra):
+Al cambiar a la rama x ingresamos al entorno de pruebas dockerizado:
+    Este proyecto incluye un entorno de pruebas dockerizado que permite evaluar el funcionamiento del sistema sin necesidad de contar con el dispositivo ni sensores físicos, en el hay un broker mqtt, un publicador, un suscriptor y un test de integracion cada uno como un servicio. La idea del mismo es validar el flujo completo del sistema sin el uso de hardware
