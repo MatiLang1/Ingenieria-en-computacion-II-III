@@ -6,7 +6,7 @@
 
 // Importamos la libreria MQTT.js en el index.html (luego cargamos este JS en el html), los eventos como "connect", "offline", "message" son eventos definidos en esa libreria
 
-const client = mqtt.connect('ws://192.168.0.24:9001'); // nos conectamos del JS (el suscriptor) al broker (asegurarse de que la IP coincida con la de la PC)
+const client = mqtt.connect(`ws://${window.location.hostname}:9001`); // nos conectamos usando IP dinamica (es la IP de nuestra PC)
 
 // inicializamos registros desde LocalStorage si existen
 // obtenemos el historial del semillero haciendo el get al localstorage segun su indice del html "historial_semillero"

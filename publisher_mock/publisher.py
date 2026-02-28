@@ -127,4 +127,4 @@ while True:
         
         print(f"Publicado -> Temp: {temp:.2f}, Luz: {int(luz)}, Nivel: {int(nivel)}")
         
-    time.sleep(0.1) # Evita consumir el 100% de la CPU en el While True
+    time.sleep(0.1) # Para no consumir el 100% del CPU en el While True
