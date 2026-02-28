@@ -1,4 +1,5 @@
 IMPORTANTE: si falla la comunicacion de la ESP32 revisar PUERTOS (como sugerencia se recomienda cambiar el puerto 1883 del docker compose por el puerto 1882 quedando asi 1882:1883 y utilizar el 1882 en las config de la ESP32)
+En el archivo .JS dentro de Frontend se utiliza la IP de la PC (localhost) para la comunicacion con el broker, si se desea cambiar la IP se debe hacer en ese archivo (se utilizo un metodo para IP dinamica en caso de fallo escribir manualmente su IP)
 
 Pasos de ejecución:
 - Clonar el repositorio: git clone https://github.com/MatiLang1/Ingenieria-en-computacion-II-III.git
