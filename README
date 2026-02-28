@@ -1,4 +1,8 @@
-- Ejecución del entorno de pruebas:
+Ejecución del proyecto:
+
+- Situarse en la rama main (por defecto es main)
+
+-Levantar
 
 Este proyecto incluye un entorno de pruebas dockerizado que
 permite evaluar el funcionamiento del sistema sin necesidad de contar con

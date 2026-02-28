@@ -17,7 +17,7 @@ const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD; 
 
 const char* mqtt_server = MQTT_SERVER_IP; 
-const int mqtt_port = 1883; 
+const int mqtt_port = 1882; 
 
 // Configuración PWM para Buzzer Pasivo (Compatible ESP32 Core v3.0)
 const int pwmFreq = 2000;
