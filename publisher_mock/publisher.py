@@ -28,7 +28,7 @@ def determinar_estado(temp, luz, nivel):
     alerta = (temp > TEMP_ALERTA) or (luz > LUZ_ALERTA) or (nivel < NIVEL_ALERTA)
     aviso = (temp > TEMP_AVISO) or (luz > LUZ_AVISO) or (nivel < NIVEL_AVISO)
     if alerta:
-        return "OK (generamos fallo en Test para chequear CI pipeline)"
+        return "ALERTA"
     elif aviso:
         return "AVISO"
     return "OK"
