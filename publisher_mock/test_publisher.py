@@ -1,3 +1,5 @@
+# Este código usa Pytest, que es el estándar de la industria para testear en Python. assert significa "afirmar". En programación, es una forma de decir: "Yo afirmo que esto que sigue DEBE ser verdad. Si no lo es, avisame que hay un error", si la condición se cumple: El test pasa (luz verde). Si la condición NO se cumple: El programa se detiene y te dice: "Acá afirmaste que el estado era OK, pero el sensor me devolvió AVISO"
+
 import pytest
 from publisher import (
     determinar_estado,
