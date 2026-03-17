@@ -1,0 +1,37 @@
+name: CD AWS Deploy Pipeline (Template)
+
+# Este workflow lo configuramos para que solo corra si VOS lo disparás manualmente desde GitHub
+# O también podés descomentar las lineas de abajo para que corra automatico al hacer push a main
+on:
+  workflow_dispatch: # Permite ejecutarlo manualmente con un botón
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 1. Checkout del código
+      uses: actions/checkout@v4
+      
+    # ESTO ES MAGIA PURA: Usamos GitHub Actions para conectarnos por SSH a tu compu en AWS
+    - name: 2. Deploy a la instancia EC2
+      uses: appleboy/ssh-action@master
+      with:
+        # Los "secrets" los tenes que cargar en GitHub -> Settings -> Secrets and variables -> Actions
+        host: ${{ secrets.EC2_HOST }}        # Ej: 54.123.45.67 (La IP de tu AWS)
+        username: ${{ secrets.EC2_USER }}    # Ej: ubuntu o ec2-user
+        key: ${{ secrets.EC2_SSH_KEY }}      # El contenido de tu archivo .pem de AWS
+        script: |
+          # Estos son los comandos que GitHub va a tipear automáticamente en tu compu de AWS:
+          
+          # 1. Bajamos los ultimos cambios de GitHub
+          cd ~/Ingenieria-en-computacion-II-III
+          git pull origin main
+          
+          # 2. Reconstruimos y levantamos todos los contenedores con la versión nueva
+          # El -d es para detach (que corra de fondo) y --build fuerza a reconstruir las imagenes
+          sudo docker-compose down
+          sudo docker-compose up -d --build
+          
+          # 3. Limpiamos imagenes viejas de Docker para que tu EC2 no se quede sin espacio disco
+          sudo docker image prune -f

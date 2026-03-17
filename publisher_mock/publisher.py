@@ -24,6 +24,21 @@ LUZ_ALERTA = 2900
 NIVEL_AVISO = 900
 NIVEL_ALERTA = 400
 
+def determinar_estado(temp, luz, nivel):
+    alerta = (temp > TEMP_ALERTA) or (luz > LUZ_ALERTA) or (nivel < NIVEL_ALERTA)
+    aviso = (temp > TEMP_AVISO) or (luz > LUZ_AVISO) or (nivel < NIVEL_AVISO)
+    if alerta:
+        return "ALERTA"
+    elif aviso:
+        return "AVISO"
+    return "OK"
+
+def debe_activar_buzzer(estado_sistema, buzzer_state):
+    return estado_sistema == "ALERTA" and not buzzer_state
+
+def buzzer_timeout_expirado(tiempo_inicio, duracion, current_time):
+    return (current_time - tiempo_inicio) >= duracion
+
 # Variables de estado
 estado_sistema = "OK"
 buzzer_state = False
@@ -72,7 +87,7 @@ while True:
     
     # Manejo del temporizador del buzzer
     if buzzer_state:
-        if current_time - tiempo_inicio_buzzer >= DURACION_BUZZER:
+        if buzzer_timeout_expirado(tiempo_inicio_buzzer, DURACION_BUZZER, current_time):
             buzzer_state = False
             print("LOG: Buzzer OFF por Tiempo (15s)")
             client.publish(TOPICS["estado_buzzer"], '{ "buzzer": "OFF" }', retain=True)
@@ -98,22 +113,18 @@ while True:
         luz = random.randint(1000, 4000)
         nivel = random.randint(200, 1500)
         
-        alerta = (temp > TEMP_ALERTA) or (luz > LUZ_ALERTA) or (nivel < NIVEL_ALERTA)
-        aviso = (temp > TEMP_AVISO) or (luz > LUZ_AVISO) or (nivel < NIVEL_AVISO)
+        estado_sistema = determinar_estado(temp, luz, nivel)
         
-        if alerta:
-            estado_sistema = "ALERTA"
+        if estado_sistema == "ALERTA":
             print("LOG: Led Rojo Prendido Fijo")
-            if not buzzer_state:
+            if debe_activar_buzzer(estado_sistema, buzzer_state):
                 buzzer_state = True
                 print("LOG: Buzzer ON")
                 client.publish(TOPICS["estado_buzzer"], '{ "buzzer": "ON" }', retain=True)
                 tiempo_inicio_buzzer = time.time()
-        elif aviso:
-            estado_sistema = "AVISO"
+        elif estado_sistema == "AVISO":
             print("LOG: Led Rojo Prendido Titilando") # Se loguea resumido cada lectura para no trabar stdout
         else:
-            estado_sistema = "OK"
             print("LOG: Led Rojo Apagado")
             
         print(f"Estado del sistema: {estado_sistema}")

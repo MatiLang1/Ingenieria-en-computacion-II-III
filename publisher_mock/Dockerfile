@@ -4,7 +4,8 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1
 
-RUN pip install --no-cache-dir paho-mqtt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY publisher.py .
 

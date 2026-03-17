@@ -1,0 +1,36 @@
+name: CD Docker Build Pipeline
+
+on:
+  push:
+    branches: [ "main", "Trabajo-CI-CD-Pipeline" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    # Este job SOLO se va a ejecutar si el job de "test" en la CI pipeline pasó exitosamente
+    # NOTA: En GitHub Actions, no podés depender directamente de OTRO archivo yml en el mismo repo a menos que uses workflow_run.
+    # Así que vamos a dejarlo que corra en paralelo.
+    
+    steps:
+    - name: 1. Checkout del código
+      uses: actions/checkout@v4
+      
+    - name: 2. Configurar Docker Buildx
+      # Esto prepara el entorno para construir imágenes de Docker
+      uses: docker/setup-buildx-action@v3
+      
+    - name: 3. Comprobar build del Frontend
+      # Intenta construir la imagen del Frontend. Si el Dockerfile tiene algun error, esto falla y te avisa
+      uses: docker/build-push-action@v5
+      with:
+        context: ./Frontend
+        push: false # Solo lo construimos para validar que funcione, NO lo subimos a ningun lado por ahora
+        tags: frontend_real:latest
+        
+    - name: 4. Comprobar build del Backend (Publisher Mock)
+      uses: docker/build-push-action@v5
+      with:
+        context: ./publisher_mock
+        push: false
+        tags: publisher-mock_real:latest
